@@ -9,14 +9,16 @@ itself by gradient descent *during the forward pass*.
 The memory is a small MLP. Every token hands it an associative-recall task, and
 how badly it fails — the **surprise** — is the gradient it steps along:
 
-```
-loss_t = ‖ M_{t-1}(k_t) − v_t ‖²              k_t = x_t W_K,  v_t = x_t W_V
-S_t    = η_t · S_{t-1} − θ_t · ∇loss_t         past surprise + momentary surprise
-M_t    = (1 − α_t) · M_{t-1} + S_t             α_t forgets
-y_t    = M_t(q_t)                              q_t = x_t W_Q
+```math
+\begin{aligned}
+\ell_t &= \lVert M_{t-1}(k_t) - v_t \rVert^2 && k_t = x_t W_K,\ v_t = x_t W_V \\
+S_t &= \eta_t\, S_{t-1} - \theta_t\, \nabla \ell_t && \text{past surprise + momentary surprise} \\
+M_t &= (1 - \alpha_t)\, M_{t-1} + S_t && \alpha_t \text{ forgets} \\
+y_t &= M_t(q_t) && q_t = x_t W_Q
+\end{aligned}
 ```
 
-`η_t`, `θ_t` and `α_t` are produced from the token itself, so the memory decides
+$\eta_t$, $\theta_t$ and $\alpha_t$ are produced from the token itself, so the memory decides
 per token how surprised to be and how much to forget. The inner gradient is
 taken with `create_graph=True`, so the outer parameters — `W_K`, `W_V`, `W_Q`,
 the gate heads, and the memory's *initial* weights — learn by backprop through
@@ -58,8 +60,8 @@ onto the first real token.
 so `torch.no_grad()` breaks it. Wrap inference in `torch.enable_grad()`.
 
 **`chunk_size` rescales the step.** A chunk's loss is a *mean* over its tokens,
-so the implementation multiplies `θ_t` by the chunk length — without that,
-changing `chunk_size` silently changes the effective learning rate. `θ` itself
+so the implementation multiplies $\theta_t$ by the chunk length — without that,
+changing `chunk_size` silently changes the effective learning rate. $\theta$ itself
 is the knob to turn down if the inner loop ever diverges; it is a genuine
 gradient step on a freshly initialised MLP, and large values do blow up.
 
@@ -85,9 +87,9 @@ The rest pin down behaviour that is easy to get silently wrong:
   architectures are checked too; getting MAC wrong here is easy.)
 - **the outer gradient really flows** through the inner update — every
   parameter, including the memory's initial weights, receives gradient
-- **gates do what they say** — `α→1` discards the previous memory entirely,
-  `θ→0` freezes the state bit-for-bit
-- **`α > 0` produces recency bias** — the newest quarter of a 256-token sequence
+- **gates do what they say** — $\alpha \to 1$ discards the previous memory entirely,
+  $\theta \to 0$ freezes the state bit-for-bit
+- **$\alpha > 0$ produces recency bias** — the newest quarter of a 256-token sequence
   recalls better than the oldest, across seeds
 - `depth=1` (a linear memory, i.e. a DeltaNet-style update) still memorizes
 
@@ -106,7 +108,7 @@ chunk's mean gradient is a cleaner direction. Worth knowing before reaching for
 
 **The memory saturates.** Recall error at T=16, 64 and 256 all land around
 0.18–0.19. Reading more tokens stops helping, because the MLP is a fixed size
-and `α_t` keeps forgetting. Capacity, not sequence length, is the binding
+and $\alpha_t$ keeps forgetting. Capacity, not sequence length, is the binding
 constraint.
 
 ## Scope

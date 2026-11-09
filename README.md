@@ -6,6 +6,8 @@ itself by gradient descent *during the forward pass*.
 > **Titans: Learning to Memorize at Test Time**
 > Behrouz, Zhong, Mirrokni (Google) — [arXiv:2501.00663](https://arxiv.org/abs/2501.00663)
 
+**Interactive demo:** <https://titans-minimal.netlify.app>. Drag the sliders and watch the mechanism run in your browser.
+
 The memory is a small MLP. Every token hands it an associative-recall task, and
 how badly it fails — the **surprise** — is the gradient it steps along:
 
